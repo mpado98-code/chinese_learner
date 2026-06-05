@@ -1,0 +1,36 @@
+name: Cinese per Jewel
+
+on:
+  # Esegue ogni giorno alle 07:00 UTC
+  # (09:00 italiane d'estate / 08:00 d'inverno).
+  # Modifica il valore "cron" qui sotto per cambiare orario.
+  # Sintassi: "minuto ora * * *" in UTC.
+  schedule:
+    - cron: "0 7 * * *"
+
+  # Permette di lanciare manualmente il workflow dal tab Actions
+  # (utile per testare l'invio o per recuperare un giorno saltato).
+  workflow_dispatch:
+
+jobs:
+  send-message:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Send daily message
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID:   ${{ secrets.TELEGRAM_CHAT_ID }}
+          START_DATE:         ${{ vars.START_DATE }}
+        run: python main.py
