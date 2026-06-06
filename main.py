@@ -134,7 +134,7 @@ def deliver(token, chat_id, text, dry_run, label):
 def main():
     token = os.environ.get("TELEGRAM_BOT_TOKEN")
     chat_id = os.environ.get("TELEGRAM_CHAT_ID")
-    start_date_str = os.environ.get("START_DATE", DEFAULT_START_DATE)
+    start_date_str = os.environ.get("START_DATE") or DEFAULT_START_DATE
     dry_run = os.environ.get("DRY_RUN", "").lower() in {"1", "true", "yes"}
 
     if not dry_run and (not token or not chat_id):
