@@ -1,16 +1,16 @@
 name: Cinese per Jewel
 
 on:
-  # Esegue ogni giorno alle 07:00 UTC
-  # (09:00 italiane d'estate / 08:00 d'inverno).
-  # Modifica il valore "cron" qui sotto per cambiare orario.
-  # Sintassi: "minuto ora * * *" in UTC.
+  # Ogni giorno alle 07:00 UTC (~09:00 italiane d'estate / 08:00 d'inverno).
   schedule:
     - cron: "0 7 * * *"
 
-  # Permette di lanciare manualmente il workflow dal tab Actions
-  # (utile per testare l'invio o per recuperare un giorno saltato).
+  # Permette l'esecuzione manuale dal tab Actions.
   workflow_dispatch:
+
+# Serve per poter fare il commit di keepalive sulla repo.
+permissions:
+  contents: write
 
 jobs:
   send-message:
@@ -18,6 +18,9 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
+        with:
+          # token con permesso di push (quello di default basta se permissions ok)
+          persist-credentials: true
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -34,3 +37,22 @@ jobs:
           TELEGRAM_CHAT_ID:   ${{ secrets.TELEGRAM_CHAT_ID }}
           START_DATE:         ${{ vars.START_DATE }}
         run: python main.py
+
+      # ---------------------------------------------------------------
+      # Keepalive: scrive un piccolo file con la data dell'ultima
+      # esecuzione e fa commit+push. Serve per non far disabilitare il
+      # workflow dopo 60 giorni di "inattivita' repo" (regola di GitHub).
+      # Se non c'e' nulla da committare, il passo non fallisce.
+      # ---------------------------------------------------------------
+      - name: Keepalive commit
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          date -u +"%Y-%m-%dT%H:%M:%SZ" > .last_run
+          git add .last_run
+          if git diff --staged --quiet; then
+            echo "Nessuna modifica, nessun commit necessario."
+          else
+            git commit -m "chore: daily keepalive [skip ci]"
+            git push
+          fi
